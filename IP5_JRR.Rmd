@@ -1,0 +1,107 @@
+---
+title: "IP5_JRR"
+output: html_document
+---
+
+```{r setup, cache=TRUE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+ Exploratory Data Analysis
+---
+**Author:** Jacob Redmon  
+**Version:** 1.0  
+**Semester:** Spring 2021  
+**Summary:**  
+
+The goal of this project is to use R and TidyVerse to clean up a data set and explore it by recreating IP4.
+
+## I. Imports
+
+```{r cache=TRUE, collapse=TRUE, message=FALSE}
+library(datasets)
+library(tidyverse)
+library(psych)
+```
+
+## II. Data Set Description
+
+```{r cache=TRUE, results='hide'}
+df <- read.csv("movie_metadata.csv")
+head(df)
+str(df)
+```
+
+The columns are not in any particular, so I'll sort them in a more meaningful way.
+
+```{r cache=TRUE, results='hide'}
+col_order <- c('movie_title',
+    'title_year',
+    'country',
+    'language',
+    'budget',
+    'gross',
+    'imdb_score',
+    'duration',
+    'genres',
+    'plot_keywords',
+    'color',
+    'content_rating',
+    'aspect_ratio',
+    'facenumber_in_poster',
+    'num_critic_for_reviews',
+    'num_user_for_reviews',
+    'num_voted_users',
+    'director_name',
+    'actor_1_name',
+    'actor_2_name',
+    'actor_3_name',
+    'director_facebook_likes',
+    'actor_1_facebook_likes',
+    'actor_2_facebook_likes',
+    'actor_3_facebook_likes',
+    'cast_total_facebook_likes',
+    'movie_facebook_likes',
+    'movie_imdb_link')
+dfa <- df[, col_order]
+str(dfa)
+```
+
+```{r cache=TRUE, results='hide'}
+describe(dfa)
+```
+
+There are many columns here that have missing data, I will remove all rows with missing data in any column and still be left with a sizeable data set. I will also reset the index since it is no longer continuous after dropping the missing data. The `aspect_ratio` column was messed up in the original data set as it should be a String but it is a float and now no longer makes sense, so I will drop the whole column.
+
+```{r cache=TRUE, results='hide'}
+dfa <- subset(dfa, select=-c(aspect_ratio))
+dfa <- dfa[complete.cases(dfa), ]
+row.names(dfa) <- NULL
+nrow(dfa)
+```
+
+The `genres` column is too verbose, so I will create an additional column that takes just the first genre in the list, which is unfortunately in alphabetical order, so it may nor be the most accurate.
+
+```{r cache=TRUE, results='hide'}
+dfa$first_genre <- gsub('\\|.*','',dfa$genre)
+head(dfa)
+```
+
+## III. Data Set Summary Statistics
+
+Generate the Summary Statistics table.
+
+
+
+
+
+
+
+
+
+
+
+
+```{r cache=TRUE}
+
+```
