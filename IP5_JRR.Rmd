@@ -18,62 +18,34 @@ The goal of this project is to use R and TidyVerse to clean up a data set and ex
 
 ## I. Imports
 
-```{r cache=TRUE, collapse=TRUE, message=FALSE}
+```{r collapse=TRUE, message=FALSE}
 library(datasets)
 library(tidyverse)
 library(psych)
+library(corrplot)
 ```
 
 ## II. Data Set Description
 
-```{r cache=TRUE, results='hide'}
+```{r cache=TRUE}
 df <- read.csv("movie_metadata.csv")
 head(df)
 str(df)
 ```
 
 The columns are not in any particular, so I'll sort them in a more meaningful way.
-
-```{r cache=TRUE, results='hide'}
-col_order <- c('movie_title',
-    'title_year',
-    'country',
-    'language',
-    'budget',
-    'gross',
-    'imdb_score',
-    'duration',
-    'genres',
-    'plot_keywords',
-    'color',
-    'content_rating',
-    'aspect_ratio',
-    'facenumber_in_poster',
-    'num_critic_for_reviews',
-    'num_user_for_reviews',
-    'num_voted_users',
-    'director_name',
-    'actor_1_name',
-    'actor_2_name',
-    'actor_3_name',
-    'director_facebook_likes',
-    'actor_1_facebook_likes',
-    'actor_2_facebook_likes',
-    'actor_3_facebook_likes',
-    'cast_total_facebook_likes',
-    'movie_facebook_likes',
-    'movie_imdb_link')
+```{r cache=TRUE}
+col_order <- c('movie_title', 'title_year', 'country', 'language', 'budget', 'gross', 'imdb_score', 'duration', 'genres', 'plot_keywords', 'color', 'content_rating', 'aspect_ratio', 'facenumber_in_poster', 'num_critic_for_reviews', 'num_user_for_reviews', 'num_voted_users', 'director_name', 'actor_1_name', 'actor_2_name', 'actor_3_name', 'director_facebook_likes', 'actor_1_facebook_likes','actor_2_facebook_likes', 'actor_3_facebook_likes', 'cast_total_facebook_likes', 'movie_facebook_likes', 'movie_imdb_link')
 dfa <- df[, col_order]
 str(dfa)
 ```
 
-```{r cache=TRUE, results='hide'}
+```{r cache=TRUE}
 describe(dfa)
 ```
 
 There are many columns here that have missing data, I will remove all rows with missing data in any column and still be left with a sizeable data set. I will also reset the index since it is no longer continuous after dropping the missing data. The `aspect_ratio` column was messed up in the original data set as it should be a String but it is a float and now no longer makes sense, so I will drop the whole column.
-
-```{r cache=TRUE, results='hide'}
+```{r cache=TRUE}
 dfa <- subset(dfa, select=-c(aspect_ratio))
 dfa <- dfa[complete.cases(dfa), ]
 row.names(dfa) <- NULL
@@ -81,8 +53,7 @@ nrow(dfa)
 ```
 
 The `genres` column is too verbose, so I will create an additional column that takes just the first genre in the list, which is unfortunately in alphabetical order, so it may nor be the most accurate.
-
-```{r cache=TRUE, results='hide'}
+```{r cache=TRUE}
 dfa$first_genre <- gsub('\\|.*','',dfa$genre)
 head(dfa)
 ```
@@ -90,18 +61,112 @@ head(dfa)
 ## III. Data Set Summary Statistics
 
 Generate the Summary Statistics table.
+```{r cache=TRUE}
+dfb <- subset(dfa, select=-c(movie_title, country, language, genres, plot_keywords, color, content_rating, director_name, actor_1_name, actor_2_name, actor_3_name, movie_imdb_link, first_genre))
+describe(dfb)
+```
 
+Generate the Proportions tables for the categorical variables.  
+  
+Function to calculate the proportion for categorical variables.
+```{r cache=TRUE}
+proportion <- function(x) {
+    x <- x / 3873 * 100
+}
+```
 
+Generate for proportion tables for categorical variables, the Reasonable Ones.
+```{r cache=TRUE}
+by_country <- dfa %>% count(country)
+by_country <- within(by_country, prop <- proportion(by_country[2]))
+by_country
 
+by_language <- dfa %>% count(language)
+by_language <- within(by_language, prop <- proportion(by_language[2]))
+by_language
 
+by_color <- dfa %>% count(color)
+by_color <- within(by_color, prop <- proportion(by_color[2]))
+by_color
 
+by_content_rating <- dfa %>% count(content_rating)
+by_content_rating <- within(by_content_rating, prop <- proportion(by_content_rating[2]))
+by_content_rating
 
+by_first_genre <- dfa %>% count(first_genre)
+by_first_genre <- within(by_first_genre, prop <- proportion(by_first_genre[2]))
+by_first_genre
+```
 
+Generate proportion tables for categorical variables, the Ones Who Shall Not Be Printed (because they're way too long).
+```{r cache=TRUE, results='hide'}
+by_plot_keywords <- dfa %>% count(plot_keywords)
+by_plot_keywords <- within(by_plot_keywords, prop <- proportion(by_plot_keywords[2]))
+by_plot_keywords
 
+by_director_name <- dfa %>% count(director_name)
+by_director_name <- within(by_director_name, prop <- proportion(by_director_name[2]))
+by_director_name
 
+by_actor_1_name <- dfa %>% count(actor_1_name)
+by_actor_1_name <- within(by_actor_1_name, prop <- proportion(by_actor_1_name[2]))
+by_actor_1_name
 
+by_actor_2_name <- dfa %>% count(actor_2_name)
+by_actor_2_name <- within(by_actor_2_name, prop <- proportion(by_actor_2_name[2]))
+by_actor_2_name
 
+by_actor_3_name <- dfa %>% count(actor_3_name)
+by_actor_3_name <- within(by_actor_3_name, prop <- proportion(by_actor_3_name[2]))
+by_actor_3_name
+```
+
+Generate a correlation matrix for all continuous variables
+```{r cache=TRUE}
+corr <- cor(dfb, use = "complete.obs")
+corrplot(corr, type='full')
+```
+
+## IV. Data Set Graphical Exploration
+
+### *A. Distributions*
+
+```{r cache=TRUE}
+hist(dfa$title_year)
+hist(dfa$budget)
+hist(dfa$gross)
+hist(dfa$imdb_score)
+hist(dfa$duration)
+hist(dfa$facenumber_in_poster)
+hist(dfa$num_critic_for_reviews)
+hist(dfa$num_user_for_reviews)
+hist(dfa$num_voted_users)
+hist(dfa$director_facebook_likes)
+hist(dfa$actor_1_facebook_likes)
+hist(dfa$actor_2_facebook_likes)
+hist(dfa$actor_3_facebook_likes)
+hist(dfa$cast_total_facebook_likes)
+hist(dfa$movie_facebook_likes)
+```
+
+### *B. Scatterplots / Pairwise Plots*
+
+```{r cache=TRUE}
+plot(dfa$duration, dfa$imdb_score, main="Duration vs. IMDB Score")
+dfc <- subset(dfa, (budget<100000000))
+plot(dfc$budget, dfc$gross, main="Budget vs. Gross where Budget < $100,000,000")
+dfd <- subset(dfa, (budget<100000000))
+plot(dfd$movie_facebook_likes, dfd$imdb_score, main="Movie Facebook Likes vs. IMDB Score where Budget > $100,000,000")
+```
+
+### *C. Barcharts*
 
 ```{r cache=TRUE}
 
+```
+
+### *D. Other Plots*
+
+```{r cache=TRUE}
+#pairplot(dfa)
 ```
